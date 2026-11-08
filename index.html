@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Рабочий стол — интерактивный макет</title>
+<style>
+:root{color-scheme:light dark;--bg:#f5f4f0;--panel:#fffefb;--ink:#252d30;--muted:#68716f;--line:#d7dad4;--accent:#42675c;--soft:#e9eee9;--stage:#e7e6e0}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:13px/1.25 system-ui,sans-serif}button,input{font:inherit}button{padding:5px 9px;border:1px solid var(--line);border-radius:5px;background:var(--panel);color:var(--ink);cursor:pointer}button:hover{background:var(--soft)}button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}button[aria-pressed=true]{background:var(--soft);border-color:var(--accent)}h1{font-size:18px;line-height:1.1;margin:0}h2{font-size:13px;margin:0 0 6px}p{margin:0}.app{display:grid;grid-template-columns:minmax(0,1fr) 280px;grid-template-rows:49px minmax(0,1fr);height:100dvh;min-height:450px}.head{grid-column:1/-1;display:flex;gap:14px;align-items:center;padding:8px 13px;border-bottom:1px solid var(--line)}.head span{color:var(--muted);font-variant-numeric:tabular-nums}.viewer{position:relative;min-width:0;min-height:0;background:var(--stage);overflow:hidden}.viewer canvas{display:block;width:100%;height:100%;touch-action:none}.hint{position:absolute;left:12px;bottom:10px;right:12px;color:#536159;font-size:12px;pointer-events:none}.loading{position:absolute;inset:0;display:grid;place-items:center;padding:20px;text-align:center}.aside{background:var(--panel);border-left:1px solid var(--line);padding:12px;overflow:auto;display:flex;flex-direction:column;gap:10px}.part{margin:0 0 7px}.part:last-child{margin:0}.part-head{display:flex;align-items:center;justify-content:space-between;gap:8px}.part-head label{font-weight:500}.part-head output{color:var(--muted);font-variant-numeric:tabular-nums}.part-controls{display:flex;align-items:center;gap:8px;margin-top:3px}.part-controls input{min-width:0;width:100%;margin:0;accent-color:var(--accent)}.part-controls button{min-width:73px;padding:3px 6px}.row{display:flex;flex-wrap:wrap;gap:5px}.row.equal>*{flex:1}.views{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}.views button{padding:4px 3px}.check{display:flex;align-items:center;gap:6px;margin:4px 0}.check input{margin:0;accent-color:var(--accent)}.swatch{display:inline-block;width:15px;height:12px;border-radius:2px;border:1px solid #0002;flex-shrink:0}.finish{display:flex;align-items:center;gap:6px;margin:3px 0}.small{font-size:12px;color:var(--muted)}.status{min-height:2.5em}.footer{margin-top:auto;padding-top:8px;border-top:1px solid var(--line)}
+.lock-button{font-size:11px;padding:2px 4px;white-space:nowrap}.part-controls output{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;flex-shrink:0}button:disabled{opacity:.55;cursor:default}
+@media(prefers-color-scheme:dark){:root{--bg:#202523;--panel:#282d2a;--ink:#eeeFE9;--muted:#b1b9b2;--line:#424b45;--accent:#527d6e;--soft:#37483f;--stage:#c9cbc4}}
+@media(max-width:680px){.app{grid-template-columns:1fr;grid-template-rows:44px minmax(260px,1fr) auto;min-height:650px}.head{padding:7px 10px;gap:10px}.head h1{font-size:16px}.head span{font-size:11px}.aside{border-left:0;border-top:1px solid var(--line);padding:9px 10px;display:grid;grid-template-columns:1fr 1fr;gap:10px;max-height:350px}.motions{grid-column:1/-1;grid-row:auto}.footer{grid-column:1/-1;margin:0;padding-top:6px}.hint{font-size:11px;left:8px;bottom:7px}}
+@media(max-width:390px){.aside{grid-template-columns:1fr;max-height:none;overflow:visible}.motions{grid-row:auto}.app{height:auto;min-height:100dvh;grid-template-rows:44px 300px auto}.footer{grid-column:auto}}
+</style>
+</head>
+<body>
+<main class="app" id="desk-app">
+<header class="head"><h1>Рабочий стол</h1><span>1000 × 560 × 776 мм</span></header>
+<section class="viewer" id="viewer" aria-label="Объёмная модель стола"><div class="loading" id="loading">Загрузка 3D-модели…</div><p class="hint">Тяните — вращение · колесо — масштаб · у столешниц сначала снимите фиксатор</p></section>
+<aside class="aside">
+<section class="motions"><h2>Открывание элементов</h2>
+<div class="part"><div class="part-head"><label for="main-range">Большая столешница</label><button type="button" class="lock-button" data-lock="main" aria-pressed="true" aria-label="Снять фиксатор большой столешницы">Снять фиксатор</button></div><div class="part-controls"><input id="main-range" type="range" min="0" max="150" step="1" value="0" disabled aria-label="Выкат большой столешницы, мм"><output id="main-value" for="main-range">0 мм</output><button type="button" data-part="main" disabled>Открыть</button></div></div>
+<div class="part"><div class="part-head"><label for="side-range">Правая столешница</label><button type="button" class="lock-button" data-lock="side" aria-pressed="true" aria-label="Снять фиксатор правой столешницы">Снять фиксатор</button></div><div class="part-controls"><input id="side-range" type="range" min="0" max="220" step="1" value="0" disabled aria-label="Сдвиг правой столешницы, мм"><output id="side-value" for="side-range">0 мм*</output><button type="button" data-part="side" disabled>Открыть</button></div></div>
+<div class="part"><div class="part-head"><label for="drawer-range">Правый ящик</label><output id="drawer-value" for="drawer-range">0 мм*</output></div><div class="part-controls"><input id="drawer-range" type="range" min="0" max="240" step="1" value="0" aria-label="Выкат ящика, мм"><button type="button" data-part="drawer">Открыть</button></div></div>
+<div class="row equal"><button class="primary" id="open-all">Открыть всё</button><button id="close-all">Закрыть всё</button></div>
+</section>
+<section><h2>Ракурс</h2><div class="views"><button data-view="general" aria-pressed="true">Общий</button><button data-view="front" aria-pressed="false">Спереди</button><button data-view="back" aria-pressed="false">Сзади</button><button data-view="left" aria-pressed="false">Слева</button><button data-view="right" aria-pressed="false">Справа</button><button data-view="top" aria-pressed="false">Сверху</button></div><div class="row" style="margin-top:5px"><button id="zoom-in" aria-label="Приблизить">＋</button><button id="zoom-out" aria-label="Отдалить">−</button><button id="fit">Вписать стол</button></div></section>
+<section><h2>Просмотр</h2><label class="check"><input id="hardware" type="checkbox" checked>Направляющие и крепления</label><label class="check"><input id="guards" type="checkbox" checked>Защитные кожухи</label><label class="check"><input id="dimensions" type="checkbox">Размеры</label><label class="check"><input id="accessories" type="checkbox" checked>Клавиатура и мышь</label></section>
+<section><h2>Отделка</h2><p class="finish"><i class="swatch" style="background:#d6c3a5"></i>Светлый дуб · столешницы</p><p class="finish"><i class="swatch" style="background:#bcb5ab"></i>Кашемир · корпус</p><p class="finish"><i class="swatch" style="background:#383b3c"></i>Графит · опоры и ручка</p></section>
+<footer class="footer small"><p class="status" id="status" aria-live="polite">Столешницы зафиксированы. Для перемещения снимите фиксатор.</p><p>* Кожухи, фиксаторы и крепления показаны схематично; подбираются под реальную фурнитуру. Ходы правой крышки и ящика предварительные.</p></footer>
+</aside>
+</main>
+<script type="module">
+const $=id=>document.getElementById(id),viewer=$('viewer'),root=$('desk-app');
+try {
+const THREE=await import('https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js');
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;viewer.appendChild(renderer.domElement);renderer.domElement.setAttribute('role','img');renderer.domElement.setAttribute('aria-label','Рабочий стол: две подвижные столешницы и выдвижной ящик');
+const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(36,1,5,12000),model=new THREE.Group();scene.add(model);
+scene.add(new THREE.HemisphereLight(0xfff9ef,0x8d9692,2.5));const sun=new THREE.DirectionalLight(0xfff6e9,3);sun.position.set(-900,1800,1100);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-1300,right:1600,top:1600,bottom:-1300,near:10,far:5000});sun.shadow.normalBias=1;scene.add(sun);const fillLight=new THREE.DirectionalLight(0xe8f0ff,1.1);fillLight.position.set(1400,1000,-900);scene.add(fillLight);
+let seed=1742;function random(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;}
+const timber=document.createElement('canvas');timber.width=2048;timber.height=512;const ctx=timber.getContext('2d');ctx.fillStyle='#d5c3a6';ctx.fillRect(0,0,2048,512);
+for(let i=0;i<1500;i++){const y=random()*512;ctx.beginPath();ctx.strokeStyle=`rgba(97,77,51,${.015+random()*.09})`;ctx.lineWidth=.3+random()*1.4;ctx.moveTo(0,y);for(let x=0;x<=2048;x+=24)ctx.lineTo(x,y+Math.sin(x*.003+i)*(.7+3*random()));ctx.stroke();}
+for(let i=0;i<12;i++){const y=random()*512;const gradient=ctx.createLinearGradient(0,y-20,0,y+20);gradient.addColorStop(0,'#fff0');gradient.addColorStop(.5,'#fff1');gradient.addColorStop(1,'#fff0');ctx.fillStyle=gradient;ctx.fillRect(0,y-20,2048,40);}
+const woodMap=new THREE.CanvasTexture(timber);woodMap.colorSpace=THREE.SRGBColorSpace;woodMap.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+const body=new THREE.MeshStandardMaterial({color:0xbcb5ab,roughness:.85}),top=new THREE.MeshStandardMaterial({map:woodMap,roughness:.72}),metal=new THREE.MeshStandardMaterial({color:0x929b9f,roughness:.4,metalness:.65}),liner=new THREE.MeshStandardMaterial({color:0xb5aca0,roughness:.9}),paper=new THREE.MeshStandardMaterial({color:0xe6e3da,roughness:.9}),dark=new THREE.MeshStandardMaterial({color:0x383b3c,roughness:.68,metalness:.15}),keys=new THREE.MeshStandardMaterial({color:0x5a5e60,roughness:.85});
+const movingMain=new THREE.Group(),middleMain=new THREE.Group(),movingSide=new THREE.Group(),middleSide=new THREE.Group(),movingDrawer=new THREE.Group(),middleDrawer=new THREE.Group(),accessories=new THREE.Group();movingMain.userData.part='main';movingSide.userData.part='side';movingDrawer.userData.part='drawer';model.add(movingMain,middleMain,movingSide,middleSide,movingDrawer,middleDrawer);movingMain.add(accessories);
+const hardwareMeshes=[],guardMeshes=[],latchPins={main:[],side:[]};
+    function box(parent,w,h,d,x,y,z,mat=body,edges=false){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);if(mat===top){const ps=mesh.geometry.attributes.position,ns=mesh.geometry.attributes.normal,uv=mesh.geometry.attributes.uv;for(let i=0;i<ps.count;i++)if(Math.abs(ns.getY(i))>.5)uv.setXY(i,(ps.getX(i)+x+500)/1000,(ps.getZ(i)+z+280)/560);uv.needsUpdate=true;}mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.carcass=mat===body;parent.add(mesh);if(edges){const e=new THREE.LineSegments(new THREE.EdgesGeometry(mesh.geometry),new THREE.LineBasicMaterial({color:0x69645c,transparent:true,opacity:.32}));mesh.add(e);e.userData.outline=true;}return mesh;}
+    function guide(parent,...args){const mesh=box(parent,...args);mesh.userData.slide=true;hardwareMeshes.push(mesh);return mesh;}
+    function rightSide(parent){
+      // One continuous 16 mm panel with two open-top slots, rather than rails
+      // Recessed carcass front allows overlay fronts; front runner moved inboard.
+      const contour=[[-280,480],[264,480],[264,760],[244,760],[244,722],[224,722],[224,760],[-218,760],[-218,722],[-238,722],[-238,760],[-280,760]],shape=new THREE.Shape();
+      contour.forEach(([z,y],i)=>i?shape.lineTo(-z,y):shape.moveTo(-z,y));shape.closePath();
+      const geometry=new THREE.ExtrudeGeometry(shape,{depth:16,steps:1,bevelEnabled:false,curveSegments:1});geometry.rotateY(Math.PI/2);geometry.translate(484,0,0);
+      const panel=new THREE.Mesh(geometry,body);panel.castShadow=panel.receiveShadow=true;panel.userData.carcass=true;panel.userData.slotted=true;parent.add(panel);
+      const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geometry),new THREE.LineBasicMaterial({color:0x69645c,transparent:true,opacity:.32}));edges.userData.outline=true;panel.add(edges);
+    }
+    function cylinder(parent,r,h,x,y,z,mat=metal){const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,32),mat);mesh.position.set(x,y,z);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;}
+    function tray(parent,x,z,w,d,bottom,height,mat=liner){box(parent,w,3,d,x,bottom+1.5,z,mat);box(parent,w,height,3,x,bottom+height/2,z-d/2,mat);box(parent,w,height,3,x,bottom+height/2,z+d/2,mat);box(parent,3,height,d,x-w/2,bottom+height/2,z,mat);box(parent,3,height,d,x+w/2,bottom+height/2,z,mat);}
+    function shapedBoard(parent,points,depth,orient,offset){const shape=new THREE.Shape();points.forEach(([x,y],i)=>i?shape.lineTo(x,y):shape.moveTo(x,y));shape.closePath();const geometry=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:false,curveSegments:1});if(orient==='floor')geometry.rotateX(-Math.PI/2);geometry.translate(...offset);const mesh=new THREE.Mesh(geometry,body);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.carcass=true;mesh.userData.shaped=true;parent.add(mesh);const edges=new THREE.LineSegments(new THREE.EdgesGeometry(geometry),new THREE.LineBasicMaterial({color:0x69645c,transparent:true,opacity:.32}));mesh.add(edges);return mesh;}
+    function fixedFloor(parent){
+      // A single 16 mm board: integral full-width crossmembers at front and back.
+      // Channels between them are closed underneath with flush 2 mm covers.
+      const footprint=[[-484,-264],[172,-264],[172,-238],[132,-238],[132,224],[172,224],[172,264],[-484,264],[-484,224],[-459,224],[-459,-238],[-484,-238]];
+      const panel=shapedBoard(parent,footprint.map(([x,z])=>[x,-z]),16,'floor',[0,720,0]);panel.userData.supportedFloor=true;
+      for(const [x,w] of [[-471.5,25],[152,40]])guardMeshes.push(box(parent,w,2,462,x,721,-7,body));
+      // Hidden dowels at all four side joints plus two connections at the back.
+      for(const x of [-484,172])for(const z of [-251,244]){const dowel=cylinder(parent,3,22,x,728,z,metal);dowel.rotation.z=Math.PI/2;dowel.userData.connector=true;hardwareMeshes.push(dowel);}
+      for(const x of [-300,0]){const dowel=cylinder(parent,3,22,x,728,-264,metal);dowel.rotation.x=Math.PI/2;dowel.userData.connector=true;hardwareMeshes.push(dowel);}
+    }
+    function frontApron(parent){
+      // Overlay front covers the recessed side-panel ends. Slots clear the guards.
+      const points=[[-498,720],[178,720],[178,757],[151,757],[151,736],[115,736],[115,757],[-442,757],[-442,736],[-478,736],[-478,757],[-498,757]];
+      shapedBoard(parent,points,16,'front',[0,0,264]);
+    }
+    function movingGuard(parent,minX,maxX){
+      const width=maxX-minX,center=(minX+maxX)/2;
+      guardMeshes.push(box(parent,width,2,426,center,738,-9,body));
+      for(const x of [minX+1,maxX-1])guardMeshes.push(box(parent,2,18,426,x,748,-9,body));
+      // Rounded closed nose, set back 76 mm from the desktop front edge.
+      const shape=new THREE.Shape(),r=3,w=width,h=20;shape.moveTo(-w/2+r,-h/2);shape.lineTo(w/2-r,-h/2);shape.quadraticCurveTo(w/2,-h/2,w/2,-h/2+r);shape.lineTo(w/2,h/2-r);shape.quadraticCurveTo(w/2,h/2,w/2-r,h/2);shape.lineTo(-w/2+r,h/2);shape.quadraticCurveTo(-w/2,h/2,-w/2,h/2-r);shape.lineTo(-w/2,-h/2+r);shape.quadraticCurveTo(-w/2,-h/2,-w/2+r,-h/2);
+      const mesh=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:3,bevelEnabled:false,curveSegments:6}),body);mesh.position.set(center,747,201);mesh.castShadow=mesh.receiveShadow=true;mesh.userData.carcass=true;mesh.userData.shaped=true;parent.add(mesh);guardMeshes.push(mesh);
+    }
+    function addLatch(parent,part,points,buttonX){
+      for(const [x,z] of points){const pin=cylinder(parent,2.5,6,x,757,z,metal);pin.userData.latch=true;latchPins[part].push(pin);hardwareMeshes.push(pin);}
+      const button=box(parent,34,6,1,buttonX,768,280.5,dark);button.userData.release=part;
+    }
+    function build(parent){
+      const move=0,side=0;
+      // Fixed carcass: 16 mm boards. Left knee clearance remains at elevation 720.
+      box(parent,16,760,544,-492,380,-8,body,true);
+      box(parent,656,220,16,-156,650,-272,body,true);
+      box(parent,296,280,16,336,620,-272,body,true);
+      box(parent,16,280,544,180,620,-8,body,true);
+      rightSide(parent);
+      box(parent,296,16,528,336,488,0,body,true);
+      fixedFloor(parent);
+      frontApron(parent);
+      box(parent,316,73,16,340,720.5,272,body,true);
+      // Right tray floor: 700 top, 684 underside. Rear pocket reserved for the bin.
+      box(parent,296,16,298,336,692,115,body,true);
+      box(parent,16,188,528,188,590,0,body);
+      box(parent,296,188,16,336,590,-42,body);
+      box(parent,1000,16,50,0,768,-255,top,true);
+      // Two original round supports, shortened to meet the lowered right block.
+      for(const z of [-225,225]){cylinder(parent,40,476,450,242,z);cylinder(parent,38,4,450,2,z,dark);}
+      // Left pair of slides; only a schematic envelope, not selected hardware.
+      box(parent,6.15,35,380,-480.925,742,-5,body);
+      box(parent,21.15,35,380,161.425,742,-5,body);
+      for(const x of [-471.5,144.5]){
+        const direction=x<0?1:-1;
+        // Open C section instead of an impossible solid rail through the guard.
+        guide(parent,1.5,35,430,x-direction*5.6,742,-5,metal);
+        guide(parent,12.7,1.5,430,x,725.25,-5,metal);
+        guide(parent,12.7,1.5,430,x,758.75,-5,metal);
+        guide(middleMain,8,14,410,x+direction*3,748,-5,dark);
+        guide(movingMain,5,10,400,x+direction*6,751,-5,metal);
+        for(const z of [-155,155])guide(movingMain,27,8,32,x+direction*11,756,z,metal);
+      }
+      movingGuard(movingMain,-476,-444);movingGuard(movingMain,117,149);
+      // Right pair follows the x direction, with schematic telescoping stages.
+      for(const z of [-228,234]){
+        guide(parent,260,35,12.7,330,742,z,metal);
+        guide(middleSide,254,23,8,330+side/2,744,z+2,dark);
+        guide(movingSide,248,17,5,330+side,747,z+4,metal);
+      }
+      // Rear stationery organizer, accessible after the 150 mm forward movement.
+      tray(parent,-165,-152.5,550,121,736,14);
+      for(const x of [-302.5,-165,-27.5])box(parent,3,14,121,x,743,-152.5,liner);
+      box(parent,117,9,86,-369,744,-151,paper,true);
+      box(parent,112,1,82,-369,749,-151,liner);
+      for(let i=0;i<3;i++){const pen=cylinder(parent,2.4,104,-232,742+i*.4,-172+i*17,dark);pen.rotation.z=Math.PI/2;}
+      box(parent,96,6,80,-95,742,-151,paper,true);
+      // Removable 160 x 160 x 120 bin in the rear part of the right block.
+      tray(parent,290,-125,160,160,630,120,paper);
+      box(parent,184,10,12,290,742,-213,body);
+      box(parent,184,10,12,290,742,-37,body);
+      tray(parent,336,130,250,240,700,14);
+      // Drawer body and two side-mounted telescopic runners.
+      box(movingDrawer,262,12,274,340,510,127,body);
+      for(const x of [215,465])box(movingDrawer,12,172,274,x,590,127,body);
+      box(movingDrawer,262,172,12,340,590,-10,body);
+      box(movingDrawer,316,200,16,340,582,272,body,true);
+      box(movingDrawer,92,10,7,340,648,283.5,dark);
+      for(const x of [202.35,477.65]){
+        guide(parent,12.7,27,260,x,590,127,metal);
+        guide(middleDrawer,7,20,256,x,591,127,dark);
+      }
+      for(const x of [208,472])guide(movingDrawer,2,16,252,x,592,127,metal);
+      // Both covers remain horizontal and at the original 776 mm upper elevation.
+      const main=movingMain;
+      box(main,678,16,510,-161,768,25,top,true);
+      box(movingSide,318,16,510,341+side,768,25,top,true);
+      addLatch(main,'main',[[-470,30],[143,30]],-422);
+      addLatch(movingSide,'side',[[220,-228],[220,234]],460);
+      // Wireless keyboard and mouse move with the large panel.
+      box(accessories,340,13,110,-225,782.5,104,dark,true);
+      for(let row=0;row<5;row++)for(let col=0;col<15;col++)box(accessories,18,1.5,14,-380+col*22,790,65+row*18,keys);
+      const mouse=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),dark);mouse.scale.set(31,15,48);mouse.position.set(50,786,117);mouse.castShadow=true;accessories.add(mouse);
+    }
+
+build(model);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(6500,5000),new THREE.MeshStandardMaterial({color:0xd4d4cb,roughness:1}));floor.rotation.x=-Math.PI/2;floor.position.y=-2;floor.receiveShadow=true;scene.add(floor);
+const limits={main:150,side:220,drawer:240},progress={main:0,side:0,drawer:0},target={...progress},locked={main:true,side:true},pendingLock={main:false,side:false};let yaw=.62,pitch=.53,zoom=1,frame=0,last=performance.now(),activeView='general';
+const dimensions=new THREE.Group();scene.add(dimensions);
+function dimension(a,b,label,point){const material=new THREE.LineBasicMaterial({color:0x496b60,depthTest:false});const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a),new THREE.Vector3(...b)]),material);line.renderOrder=5;dimensions.add(line);const c=document.createElement('canvas');c.width=480;c.height=72;const x=c.getContext('2d');x.fillStyle='#fffefbec';x.fillRect(0,0,480,72);x.fillStyle='#314a40';x.font='42px system-ui';x.textAlign='center';x.fillText(label,240,47);const texture=new THREE.CanvasTexture(c);texture.colorSpace=THREE.SRGBColorSpace;const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:false,toneMapped:false}));sprite.position.set(...point);sprite.scale.set(285,43,1);sprite.renderOrder=6;dimensions.add(sprite);}
+dimension([-500,15,560],[500,15,560],'1000 мм',[0,40,575]);dimension([780,15,-280],[780,15,280],'560 мм',[700,40,0]);dimension([-590,0,-280],[-590,776,-280],'776 мм',[-620,400,-280]);dimensions.visible=false;
+function placeParts(){movingMain.position.z=progress.main*150;middleMain.position.z=progress.main*75;movingSide.position.x=progress.side*220;middleSide.position.x=progress.side*110;movingDrawer.position.z=progress.drawer*240;middleDrawer.position.z=progress.drawer*120;}
+function setTransforms(){placeParts();
+for(const part of Object.keys(limits)){const value=Math.round(progress[part]*limits[part]);$(part+'-range').value=value;$(part+'-value').value=value+' мм'+(part==='main'?'':'*');const button=root.querySelector(`[data-part="${part}"]`);button.textContent=target[part]>.5?'Закрыть':'Открыть';button.disabled=!!locked[part];$(part+'-range').disabled=!!locked[part];}
+for(const part of ['main','side']){const button=root.querySelector(`[data-lock="${part}"]`),atEnd=progress[part]<.0001||progress[part]>.9999,settled=Math.abs(target[part]-progress[part])<.0001;button.disabled=!atEnd||!settled;button.textContent=locked[part]?'Снять фиксатор':atEnd?'Зафиксировать':'Свободный ход';button.setAttribute('aria-pressed',String(locked[part]));button.setAttribute('aria-label',locked[part]?'Снять фиксатор '+(part==='main'?'большой столешницы':'правой столешницы'):'Зафиксировать '+(part==='main'?'большую столешницу':'правую столешницу'));latchPins[part].forEach(pin=>pin.position.y=locked[part]?757:764);}
+root.dataset.state=JSON.stringify({revision:'03',main:Math.round(progress.main*150),side:Math.round(progress.side*220),drawer:Math.round(progress.drawer*240),locked:{...locked},view:activeView,hardware:$('hardware').checked,guards:$('guards').checked});}
+function render(){const w=viewer.clientWidth,h=viewer.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;const distance=Math.max(2100,2500/camera.aspect)*zoom*(dimensions.visible?1.22:1),look=new THREE.Vector3(60,380,65);camera.position.set(look.x+Math.sin(yaw)*Math.cos(pitch)*distance,look.y+Math.sin(pitch)*distance,look.z+Math.cos(yaw)*Math.cos(pitch)*distance);camera.lookAt(look);camera.updateProjectionMatrix();if(dimensions.visible){const worldHeight=24*2*Math.tan(camera.fov*Math.PI/360)*distance/h;dimensions.children.filter(o=>o.isSprite).forEach(o=>o.scale.set(worldHeight*480/72,worldHeight,1));}setTransforms();renderer.render(scene,camera);}
+function tick(now){frame=0;const dt=Math.min((now-last)/1000,.15);last=now;let moving=false,relocked=false;for(const part of Object.keys(limits)){const delta=target[part]-progress[part];if(Math.abs(delta)>.0001){progress[part]+=Math.sign(delta)*Math.min(Math.abs(delta),dt/.65);moving=true;}if(pendingLock[part]&&Math.abs(progress[part]-target[part])<.0001){locked[part]=true;pendingLock[part]=false;relocked=true;}}render();if(relocked)announce();if(moving)frame=requestAnimationFrame(tick);}
+function requestRender(){if(!frame){last=performance.now();frame=requestAnimationFrame(tick);}}
+function announce(){const names={main:'Большая',side:'Правая',drawer:'Ящик'};$('status').textContent=Object.keys(limits).map(k=>names[k]+': '+Math.round(target[k]*limits[k])+' мм'+(k in locked?(locked[k]?' · зафиксирована':' · свободна'):'')).join('; ');}
+function toggle(part){if(locked[part]){$('status').textContent='Столешница зафиксирована. Сначала нажмите «Снять фиксатор».';return;}target[part]=target[part]>.5?0:1;if(part in locked)pendingLock[part]=true;announce();requestRender();}
+function toggleLock(part){if(Math.abs(target[part]-progress[part])>.0001||progress[part]>.0001&&progress[part]<.9999)return;locked[part]=!locked[part];pendingLock[part]=false;announce();requestRender();}
+root.querySelectorAll('[data-lock]').forEach(button=>button.addEventListener('click',()=>toggleLock(button.dataset.lock)));
+root.querySelectorAll('[data-part]').forEach(button=>button.addEventListener('click',()=>toggle(button.dataset.part)));
+for(const part of Object.keys(limits)){$(part+'-range').addEventListener('input',()=>{if(locked[part])return;progress[part]=target[part]=+$(part+'-range').value/limits[part];if(part in locked)pendingLock[part]=false;announce();requestRender();});$(part+'-range').addEventListener('change',()=>{if(part in locked&&(progress[part]<.0001||progress[part]>.9999)){locked[part]=true;announce();requestRender();}});}
+function moveAll(value){for(const k of Object.keys(limits)){if(k in locked){locked[k]=false;pendingLock[k]=true;}target[k]=value;}announce();requestRender();}
+$('open-all').onclick=()=>moveAll(1);$('close-all').onclick=()=>moveAll(0);
+const poses={general:[.62,.53],front:[0,.105],back:[Math.PI,.27],left:[-Math.PI/2,.24],right:[Math.PI/2,.24],top:[0,1.49]};
+root.querySelectorAll('[data-view]').forEach(button=>button.addEventListener('click',()=>{activeView=button.dataset.view;[yaw,pitch]=poses[activeView];zoom=1;root.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));requestRender();}));
+function changeZoom(multiplier){zoom=THREE.MathUtils.clamp(zoom*multiplier,.65,1.8);requestRender();}$('zoom-in').onclick=()=>changeZoom(.85);$('zoom-out').onclick=()=>changeZoom(1.15);$('fit').onclick=()=>{zoom=1;requestRender();};
+$('hardware').onchange=()=>{hardwareMeshes.forEach(m=>m.visible=$('hardware').checked);requestRender();};$('guards').onchange=()=>{guardMeshes.forEach(m=>m.visible=$('guards').checked);requestRender();};$('dimensions').onchange=()=>{dimensions.visible=$('dimensions').checked;requestRender();};$('accessories').onchange=()=>{accessories.visible=$('accessories').checked;requestRender();};
+const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let dragging=null;
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0)return;dragging={x:e.clientX,y:e.clientY,startX:e.clientX,startY:e.clientY,moved:false};renderer.domElement.setPointerCapture(e.pointerId);});
+renderer.domElement.addEventListener('pointermove',e=>{if(!dragging)return;const dx=e.clientX-dragging.x,dy=e.clientY-dragging.y;if(Math.hypot(e.clientX-dragging.startX,e.clientY-dragging.startY)>5)dragging.moved=true;if(dragging.moved){yaw-=dx*.007;pitch=THREE.MathUtils.clamp(pitch+dy*.006,.08,1.49);activeView='custom';root.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed','false'));requestRender();}dragging.x=e.clientX;dragging.y=e.clientY;});
+renderer.domElement.addEventListener('pointerup',e=>{if(!dragging)return;if(!dragging.moved){const rect=renderer.domElement.getBoundingClientRect();pointer.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);ray.setFromCamera(pointer,camera);const hit=ray.intersectObjects(model.children,true).find(h=>{let o=h.object;if(!o.isMesh)return false;while(o){if(!o.visible)return false;o=o.parent;}return true;});let obj=hit?.object;while(obj&&!obj.userData.part&&!obj.userData.release)obj=obj.parent;if(obj?.userData.release)toggleLock(obj.userData.release);else if(obj?.userData.part)toggle(obj.userData.part);}dragging=null;});
+renderer.domElement.addEventListener('pointercancel',()=>dragging=null);renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();changeZoom(Math.exp(e.deltaY*.001));},{passive:false});
+function auditGeometry(){
+  const saved={...progress},triangle=new THREE.Triangle(),v=new THREE.Vector3(),failures=[];
+  const bodies=[],slides=[];model.traverse(o=>{if(o.userData.carcass)bodies.push(o);if(o.userData.slide)slides.push(o);});
+  function insideGroup(o,group){while(o){if(o===group)return true;o=o.parent;}return false;}
+  const movingBodies=bodies.filter(o=>[movingMain,movingSide,movingDrawer].some(g=>insideGroup(o,g)));
+  const fixedBodies=bodies.filter(o=>!movingBodies.includes(o));
+  function intersects(a,mesh){const b=new THREE.Box3().setFromObject(mesh);if(!['x','y','z'].every(k=>Math.min(a.max[k],b.max[k])-Math.max(a.min[k],b.min[k])>.01))return false;if(!mesh.userData.shaped&&!mesh.userData.slotted)return true;const p=mesh.geometry.attributes.position,ix=mesh.geometry.index,n=ix?ix.count:p.count;for(let i=0;i<n;i+=3){for(let j=0;j<3;j++){v.fromBufferAttribute(p,ix?ix.getX(i+j):i+j).applyMatrix4(mesh.matrixWorld);triangle[['a','b','c'][j]].copy(v);}if(a.intersectsTriangle(triangle))return true;}return false;}
+  const samples=[];for(const part of Object.keys(limits))for(let i=0;i<=20;i++)samples.push({main:0,side:0,drawer:0,[part]:i/20});samples.push({main:1,side:1,drawer:1});
+  for(const sample of samples){Object.assign(progress,sample);placeParts();model.updateMatrixWorld(true);for(const rail of slides){const bounds=new THREE.Box3().setFromObject(rail);for(const panel of bodies)if(intersects(bounds,panel))failures.push({kind:'rail-panel',sample,rail:rail.position.toArray(),panel:panel.position.toArray()});}for(const part of movingBodies){const bounds=new THREE.Box3().setFromObject(part);for(const panel of fixedBodies)if(intersects(bounds,panel))failures.push({kind:'moving-fixed',sample,part:part.position.toArray(),panel:panel.position.toArray()});}}
+  Object.assign(progress,saved);placeParts();model.updateMatrixWorld(true);root.dataset.geometryAudit=JSON.stringify({revision:'03',samples:samples.length,collisions:failures.length,failures:failures.slice(0,20),floorBottom:720,movingGuardBottom:737,hiddenFloorConnections:6,drawerOverlay:{left:182,right:498,bottom:482,top:682}});
+}
+new ResizeObserver(requestRender).observe(viewer);$('loading').remove();render();if(location.hash==='#check')auditGeometry();
+}catch(error){$('loading').textContent='Не удалось загрузить 3D. Проверьте подключение к интернету и поддержку WebGL.';console.error(error);}
+</script>
+</body>
+</html>
